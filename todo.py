@@ -1,30 +1,29 @@
-from bottle import request, response, get, post , put, run
+from bottle import request, response, get, post , put, run, install
+from bottle_sqlite import SQLitePlugin
+from sqliteJson import *
+import json
 
-todos = [{'id': 1, 'name': 'brew coffe', 'done': False }]
+install(SQLitePlugin(dbfile='./test.db'))
 
 @get('/todo')
-def get_todo():
-    return {
-    'todos': todos,
-    'length': len(todos)
-    }
+def get_todo(db):
+    c = db.execute('SELECT id, todo, done from Todo ')
+    b = json_serializer(c)
+    return {'todo' : b}
 
 @post('/todo')
-def add_todo():
+def add_todo(db):
     todo = request.json['todo']
-    todos.append({
-        'id': len(todos)+1,
-        'name': todo,
-        'done': False
-    })
+    c = db.execute('INSERT INTO Todo(todo) values(?)', (todo,))
     return 'Todo added!'
 
 @put('/todo')
-def edit_todo():
+def edit_todo(db):
     id = int(request.json['id'])
-    done = request.json['done']
-    todos[id-1]['done'] = done
-    return 'Updated Todo'
+    done = 1 if request.json['done'] else 0
+    print id, done
+    c = db.execute('UPDATE Todo set done = ? WHERE id  = ?', (done, id))
+    return 'yo'
 
 
 #run the default app
